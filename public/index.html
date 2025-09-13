@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>二维码文件生成器 | QR Code File Generator</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- 头部标题 -->
+        <header class="header">
+            <div class="header-content">
+                <h1><i class="fas fa-qrcode"></i> 二维码文件生成器</h1>
+                <p>支持图片、视频、音频等多种格式文件，生成二维码供手机扫描查看</p>
+            </div>
+        </header>
+
+        <!-- 主要内容区域 -->
+        <main class="main-content">
+            <!-- 文件上传区域 -->
+            <section class="upload-section">
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-content">
+                        <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                        <h3>拖拽文件到此处或点击选择文件</h3>
+                        <p>支持图片、视频、音频等多种格式</p>
+                        <p class="file-limit">最大支持100MB文件</p>
+                        <input type="file" id="fileInput" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv" multiple>
+                        <button class="upload-btn" id="uploadBtn">
+                            <i class="fas fa-plus"></i> 选择文件
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 支持的文件格式说明 -->
+                <div class="supported-formats">
+                    <h4><i class="fas fa-info-circle"></i> 支持的文件格式</h4>
+                    <div class="format-grid">
+                        <div class="format-item">
+                            <i class="fas fa-image"></i>
+                            <span>图片</span>
+                            <small>JPG, PNG, GIF, WebP, BMP, SVG</small>
+                        </div>
+                        <div class="format-item">
+                            <i class="fas fa-video"></i>
+                            <span>视频</span>
+                            <small>MP4, AVI, MOV, WMV, FLV, WebM, MKV</small>
+                        </div>
+                        <div class="format-item">
+                            <i class="fas fa-music"></i>
+                            <span>音频</span>
+                            <small>MP3, WAV, OGG, AAC, FLAC, M4A, WMA</small>
+                        </div>
+                        <div class="format-item">
+                            <i class="fas fa-file-alt"></i>
+                            <span>文档</span>
+                            <small>PDF, DOC, DOCX, XLS, XLSX, TXT, CSV</small>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 处理状态显示 -->
+            <section class="status-section" id="statusSection" style="display: none;">
+                <div class="status-content">
+                    <div class="loading-spinner">
+                        <i class="fas fa-spinner fa-spin"></i>
+                    </div>
+                    <p id="statusText">正在上传文件...</p>
+                </div>
+            </section>
+
+            <!-- 结果展示区域 -->
+            <section class="result-section" id="resultSection" style="display: none;">
+                <div class="result-content">
+                    <div class="result-header">
+                        <h3><i class="fas fa-check-circle"></i> 二维码生成成功</h3>
+                        <button class="new-upload-btn" id="newUploadBtn">
+                            <i class="fas fa-plus"></i> 上传新文件
+                        </button>
+                    </div>
+                    
+                    <div class="result-grid">
+                        <!-- 文件信息 -->
+                        <div class="file-info-card">
+                            <h4><i class="fas fa-file"></i> 文件信息</h4>
+                            <div class="file-details">
+                                <div class="detail-item">
+                                    <span class="label">文件名:</span>
+                                    <span class="value" id="fileName">-</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="label">文件大小:</span>
+                                    <span class="value" id="fileSize">-</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="label">文件类型:</span>
+                                    <span class="value" id="fileType">-</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="label">上传时间:</span>
+                                    <span class="value" id="uploadTime">-</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="label">访问链接:</span>
+                                    <span class="value link-value" id="accessUrl">-</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 二维码展示 -->
+                        <div class="qrcode-card">
+                            <h4><i class="fas fa-qrcode"></i> 二维码</h4>
+                            <div class="qrcode-container">
+                                <img id="qrCodeImage" src="" alt="二维码" style="display: none;">
+                                <div class="qrcode-actions">
+                                    <button class="action-btn download-btn" id="downloadQRBtn">
+                                        <i class="fas fa-download"></i> 保存二维码
+                                    </button>
+                                    <button class="action-btn copy-btn" id="copyLinkBtn">
+                                        <i class="fas fa-copy"></i> 复制链接
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 使用说明 -->
+                    <div class="usage-info">
+                        <h4><i class="fas fa-mobile-alt"></i> 使用说明</h4>
+                        <div class="usage-steps">
+                            <div class="step">
+                                <div class="step-number">1</div>
+                                <div class="step-content">
+                                    <h5>保存二维码</h5>
+                                    <p>点击"保存二维码"按钮将二维码图片保存到本地</p>
+                                </div>
+                            </div>
+                            <div class="step">
+                                <div class="step-number">2</div>
+                                <div class="step-content">
+                                    <h5>手机扫码</h5>
+                                    <p>使用手机相机或扫码应用扫描二维码</p>
+                                </div>
+                            </div>
+                            <div class="step">
+                                <div class="step-number">3</div>
+                                <div class="step-content">
+                                    <h5>查看文件</h5>
+                                    <p>扫码后即可在手机浏览器中查看您上传的文件</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- 页脚 -->
+        <footer class="footer">
+            <div class="footer-content">
+                <p>&copy; 2025 二维码文件生成器. 支持无限次扫描，文件永久保存.</p>
+                <div class="footer-links">
+                    <a href="#"><i class="fas fa-shield-alt"></i> 隐私政策</a>
+                    <a href="#"><i class="fas fa-question-circle"></i> 帮助中心</a>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- 通知消息 -->
+    <div class="notification" id="notification">
+        <div class="notification-content">
+            <i class="notification-icon"></i>
+            <span class="notification-text"></span>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
