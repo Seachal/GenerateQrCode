@@ -22,5 +22,16 @@
     "mimetype": "image/png",
     "size": 2351477,
     "uploadTime": "2025-09-13T09:07:56.105Z"
+  },
+  "f9d1db01-bec1-412b-9834-98c69fd060ea": {
+    "id": "f9d1db01-bec1-412b-9834-98c69fd060ea",
+    "originalName": "AI_Generated_Image_1747548528639.png",
+    "filename": "f9d1db01-bec1-412b-9834-98c69fd060ea.png",
+    "mimetype": "image/png",
+    "size": 2351477,
+    "uploadTime": "2025-09-20T14:20:08.423Z",
+    "studentName": "李四",
+    "category": "self",
+    "relativePath": "students/李四/self/f9d1db01-bec1-412b-9834-98c69fd060ea.png"
   }
 }

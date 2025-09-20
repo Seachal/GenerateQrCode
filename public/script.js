@@ -1,20 +1,45 @@
-// 二维码文件生成器前端脚本
-class QRCodeGenerator {
+// 学生介绍二维码生成器前端脚本
+class StudentQRCodeGenerator {
     constructor() {
+        this.isAuthenticated = false;
+        this.currentStudent = null;
         this.initializeElements();
         this.bindEvents();
         this.setupDragAndDrop();
+        this.checkAuthStatus();
     }
 
     // 初始化DOM元素
     initializeElements() {
+        // 认证相关元素
+        this.loginBtn = document.getElementById('loginBtn');
+        this.logoutBtn = document.getElementById('logoutBtn');
+        this.userInfo = document.getElementById('userInfo');
+        this.loginSection = document.getElementById('loginSection');
+        this.loginForm = document.getElementById('loginForm');
+        this.cancelLoginBtn = document.getElementById('cancelLoginBtn');
+        this.usernameInput = document.getElementById('usernameInput');
+        this.passwordInput = document.getElementById('passwordInput');
+        
+        // 学生管理元素
+        this.studentManagement = document.getElementById('studentManagement');
+        this.studentsGrid = document.getElementById('studentsGrid');
+        this.refreshStudentsBtn = document.getElementById('refreshStudentsBtn');
+        
+        // 上传相关元素
+        this.uploadSection = document.getElementById('uploadSection');
         this.uploadArea = document.getElementById('uploadArea');
         this.fileInput = document.getElementById('fileInput');
         this.uploadBtn = document.getElementById('uploadBtn');
+        this.studentNameInput = document.getElementById('studentNameInput');
+        this.categorySelect = document.getElementById('categorySelect');
+        
+        // 状态和结果元素
         this.statusSection = document.getElementById('statusSection');
         this.statusText = document.getElementById('statusText');
         this.resultSection = document.getElementById('resultSection');
         this.newUploadBtn = document.getElementById('newUploadBtn');
+        this.backToManagementBtn = document.getElementById('backToManagementBtn');
         this.qrCodeImage = document.getElementById('qrCodeImage');
         this.downloadQRBtn = document.getElementById('downloadQRBtn');
         this.copyLinkBtn = document.getElementById('copyLinkBtn');
@@ -30,12 +55,22 @@ class QRCodeGenerator {
 
     // 绑定事件监听器
     bindEvents() {
-        // 文件选择事件
+        // 认证相关事件
+        this.loginBtn.addEventListener('click', () => this.showLoginForm());
+        this.logoutBtn.addEventListener('click', () => this.logout());
+        this.loginForm.addEventListener('submit', (e) => this.handleLogin(e));
+        this.cancelLoginBtn.addEventListener('click', () => this.hideLoginForm());
+        
+        // 学生管理事件
+        this.refreshStudentsBtn.addEventListener('click', () => this.loadStudents());
+        
+        // 文件上传事件
         this.fileInput.addEventListener('change', (e) => this.handleFileSelect(e));
         this.uploadBtn.addEventListener('click', () => this.fileInput.click());
         
         // 按钮点击事件
-        this.newUploadBtn.addEventListener('click', () => this.resetUpload());
+        this.newUploadBtn.addEventListener('click', () => this.showUploadForm());
+        this.backToManagementBtn.addEventListener('click', () => this.showStudentManagement());
         this.downloadQRBtn.addEventListener('click', () => this.downloadQRCode());
         this.copyLinkBtn.addEventListener('click', () => this.copyAccessLink());
         
@@ -86,12 +121,254 @@ class QRCodeGenerator {
         }
     }
 
+    // 检查认证状态
+    async checkAuthStatus() {
+        try {
+            const response = await fetch('/api/auth/status');
+            const result = await response.json();
+            
+            if (result.authenticated) {
+                this.isAuthenticated = true;
+                this.showAuthenticatedState(result.username);
+                this.loadStudents();
+            } else {
+                this.isAuthenticated = false;
+                this.showUnauthenticatedState();
+            }
+        } catch (error) {
+            console.error('检查认证状态错误:', error);
+            this.isAuthenticated = false;
+            this.showUnauthenticatedState();
+        }
+    }
+
+    // 显示登录表单
+    showLoginForm() {
+        this.loginSection.style.display = 'block';
+        this.usernameInput.focus();
+    }
+
+    // 隐藏登录表单
+    hideLoginForm() {
+        this.loginSection.style.display = 'none';
+        this.usernameInput.value = '';
+        this.passwordInput.value = '';
+    }
+
+    // 处理登录
+    async handleLogin(e) {
+        e.preventDefault();
+        
+        const username = this.usernameInput.value;
+        const password = this.passwordInput.value;
+        
+        if (!username || !password) {
+            this.showNotification('请输入用户名和密码', 'error');
+            return;
+        }
+        
+        try {
+            const response = await fetch('/api/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ username, password })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                this.isAuthenticated = true;
+                this.showAuthenticatedState(username);
+                this.hideLoginForm();
+                this.loadStudents();
+                this.showNotification('登录成功！', 'success');
+            } else {
+                this.showNotification(result.error || '登录失败', 'error');
+            }
+        } catch (error) {
+            console.error('登录错误:', error);
+            this.showNotification('登录失败，请检查网络连接', 'error');
+        }
+    }
+
+    // 退出登录
+    async logout() {
+        try {
+            const response = await fetch('/api/logout', {
+                method: 'POST'
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                this.isAuthenticated = false;
+                this.showUnauthenticatedState();
+                this.showNotification('已退出登录', 'success');
+            }
+        } catch (error) {
+            console.error('退出登录错误:', error);
+            this.showNotification('退出登录失败', 'error');
+        }
+    }
+
+    // 显示已认证状态
+    showAuthenticatedState(username) {
+        this.loginBtn.style.display = 'none';
+        this.userInfo.style.display = 'flex';
+        this.userInfo.querySelector('#username').textContent = username;
+        this.studentManagement.style.display = 'block';
+        this.hideAllSections();
+    }
+
+    // 显示未认证状态
+    showUnauthenticatedState() {
+        this.loginBtn.style.display = 'inline-block';
+        this.userInfo.style.display = 'none';
+        this.hideAllSections();
+    }
+
+    // 隐藏所有内容区域
+    hideAllSections() {
+        this.loginSection.style.display = 'none';
+        this.uploadSection.style.display = 'none';
+        this.statusSection.style.display = 'none';
+        this.resultSection.style.display = 'none';
+    }
+
+    // 加载学生列表
+    async loadStudents() {
+        try {
+            const response = await fetch('/api/students');
+            const result = await response.json();
+            
+            if (result.success) {
+                this.renderStudentsGrid(result.students);
+            } else {
+                this.showNotification(result.error || '加载学生列表失败', 'error');
+            }
+        } catch (error) {
+            console.error('加载学生列表错误:', error);
+            this.showNotification('加载学生列表失败', 'error');
+        }
+    }
+
+    // 渲染学生网格
+    renderStudentsGrid(students) {
+        const grid = this.studentsGrid;
+        grid.innerHTML = '';
+        
+        // 添加新建学生卡片
+        const addStudentCard = document.createElement('div');
+        addStudentCard.className = 'student-card add-student-card';
+        addStudentCard.innerHTML = `
+            <div class="add-student-content">
+                <i class="fas fa-plus-circle add-icon"></i>
+                <h4>添加新学生</h4>
+                <p>点击上传学生介绍文件</p>
+            </div>
+        `;
+        addStudentCard.addEventListener('click', () => this.showUploadForm());
+        grid.appendChild(addStudentCard);
+        
+        // 添加现有学生卡片
+        students.forEach(student => {
+            const studentCard = document.createElement('div');
+            studentCard.className = 'student-card';
+            
+            const categoryLabels = {
+                'self': '自我介绍',
+                'family': '家庭介绍',
+                'career': '职业介绍'
+            };
+            
+            const categoriesHtml = Object.entries(student.categories).map(([category, count]) => {
+                const label = categoryLabels[category] || category;
+                const badgeClass = count > 0 ? 'has-files' : 'no-files';
+                return `<span class="category-badge ${badgeClass}">${label} (${count})</span>`;
+            }).join('');
+            
+            studentCard.innerHTML = `
+                <div class="student-info">
+                    <h4><i class="fas fa-user-graduate"></i> ${student.name}</h4>
+                    <div class="categories">
+                        ${categoriesHtml}
+                    </div>
+                    <button class="upload-for-student-btn" data-student="${student.name}">
+                        <i class="fas fa-upload"></i> 上传文件
+                    </button>
+                </div>
+            `;
+            
+            const uploadBtn = studentCard.querySelector('.upload-for-student-btn');
+            uploadBtn.addEventListener('click', () => {
+                this.showUploadForm(student.name);
+            });
+            
+            grid.appendChild(studentCard);
+        });
+    }
+
+    // 显示上传表单
+    showUploadForm(studentName = '') {
+        this.hideAllSections();
+        this.uploadSection.style.display = 'block';
+        
+        if (studentName) {
+            this.studentNameInput.value = studentName;
+            this.currentStudent = studentName;
+        } else {
+            this.studentNameInput.value = '';
+            this.currentStudent = null;
+        }
+        
+        this.categorySelect.value = '';
+        this.fileInput.value = '';
+        
+        // 滚动到上传区域
+        this.uploadSection.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // 显示学生管理页面
+    showStudentManagement() {
+        this.hideAllSections();
+        this.studentManagement.style.display = 'block';
+        this.loadStudents();
+        
+        // 滚动到管理区域
+        this.studentManagement.scrollIntoView({ behavior: 'smooth' });
+    }
+
     // 处理文件上传
     async processFile(file) {
         try {
             // 显示加载状态
             this.showStatus('正在上传文件...');
             
+            // 验证登录状态
+            if (!this.isAuthenticated) {
+                this.hideStatus();
+                this.showNotification('请先登录', 'error');
+                return;
+            }
+
+            // 验证学生信息
+            const studentName = this.studentNameInput.value.trim();
+            const category = this.categorySelect.value;
+
+            if (!studentName) {
+                this.hideStatus();
+                this.showNotification('请输入学生姓名', 'error');
+                return;
+            }
+
+            if (!category) {
+                this.hideStatus();
+                this.showNotification('请选择分类', 'error');
+                return;
+            }
+
             // 验证文件
             if (!this.validateFile(file)) {
                 return;
@@ -100,6 +377,8 @@ class QRCodeGenerator {
             // 创建FormData对象
             const formData = new FormData();
             formData.append('file', file);
+            formData.append('studentName', studentName);
+            formData.append('category', category);
 
             // 上传文件
             const response = await fetch('/api/upload', {
@@ -112,7 +391,7 @@ class QRCodeGenerator {
             if (result.success) {
                 this.hideStatus();
                 this.showResult(result);
-                this.showNotification('文件上传成功！', 'success');
+                this.showNotification(`${studentName}的${this.getCategoryName(category)}上传成功！`, 'success');
             } else {
                 throw new Error(result.error || '上传失败');
             }
@@ -182,10 +461,15 @@ class QRCodeGenerator {
         this.accessUrl.textContent = result.accessUrl;
         this.accessUrl.dataset.url = result.accessUrl;
 
-        // 显示二维码
-        this.qrCodeImage.src = result.qrCode;
-        this.qrCodeImage.style.display = 'block';
-        this.qrCodeImage.dataset.qrCode = result.qrCode;
+        // 如果有卡片数据，生成美化卡片；否则使用普通二维码
+        if (result.qrCardData) {
+            this.generateQRCard(result.qrCardData);
+        } else {
+            // 显示普通二维码
+            this.qrCodeImage.src = result.qrCode;
+            this.qrCodeImage.style.display = 'block';
+            this.qrCodeImage.dataset.qrCode = result.qrCode;
+        }
 
         // 显示结果区域
         this.resultSection.style.display = 'block';
@@ -194,14 +478,86 @@ class QRCodeGenerator {
         this.resultSection.scrollIntoView({ behavior: 'smooth' });
     }
 
+    // 生成美化二维码卡片（前端Canvas实现）
+    generateQRCard(qrCardData) {
+        const canvas = document.createElement('canvas');
+        canvas.width = 400;
+        canvas.height = 500;
+        const ctx = canvas.getContext('2d');
+        
+        // 设置背景渐变
+        const gradient = ctx.createLinearGradient(0, 0, 0, 500);
+        gradient.addColorStop(0, '#FFE5E5');
+        gradient.addColorStop(1, '#FFF0E5');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 400, 500);
+        
+        // 添加装饰边框
+        ctx.strokeStyle = '#FF9999';
+        ctx.lineWidth = 3;
+        ctx.strokeRect(10, 10, 380, 480);
+        
+        // 设置字体和标题
+        ctx.fillStyle = '#333333';
+        ctx.textAlign = 'center';
+        ctx.font = 'bold 24px Arial';
+        ctx.fillText(qrCardData.title, 200, 50);
+        
+        // 绘制二维码背景
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(90, 120, 220, 220);
+        
+        // 加载并绘制二维码
+        const qrImage = new Image();
+        qrImage.onload = () => {
+            ctx.drawImage(qrImage, 100, 130, 200, 200);
+            
+            // 添加提示文字
+            ctx.fillStyle = '#FF6B6B';
+            ctx.font = '16px Arial';
+            ctx.fillText('扫描查看详情', 200, 380);
+            
+            // 添加装饰圆点
+            ctx.fillStyle = '#FFB3B3';
+            ctx.beginPath();
+            ctx.arc(50, 80, 8, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.arc(350, 80, 8, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // 底部装饰
+            for (let i = 0; i < 5; i++) {
+                ctx.beginPath();
+                ctx.arc(120 + i * 40, 430, 5, 0, 2 * Math.PI);
+                ctx.fill();
+            }
+            
+            // 将canvas转换为图片并显示
+            const cardDataURL = canvas.toDataURL();
+            this.qrCodeImage.src = cardDataURL;
+            this.qrCodeImage.style.display = 'block';
+            this.qrCodeImage.dataset.qrCode = cardDataURL;
+        };
+        
+        qrImage.crossOrigin = 'anonymous';
+        qrImage.src = qrCardData.qrCode;
+    }
+
     // 重置上传
     resetUpload() {
-        this.fileInput.value = '';
-        this.statusSection.style.display = 'none';
-        this.resultSection.style.display = 'none';
-        
-        // 滚动到顶部
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        this.showUploadForm(this.currentStudent);
+    }
+
+    // 获取分类名称
+    getCategoryName(category) {
+        const categoryNames = {
+            'self': '自我介绍',
+            'family': '家庭介绍',
+            'career': '职业介绍'
+        };
+        return categoryNames[category] || category;
     }
 
     // 下载二维码
@@ -220,7 +576,7 @@ class QRCodeGenerator {
             link.click();
             document.body.removeChild(link);
             
-            this.showNotification('二维码已保存到本地', 'success');
+            this.showNotification('学生介绍卡片已保存到本地', 'success');
         } catch (error) {
             console.error('下载错误:', error);
             this.showNotification('下载失败', 'error');
@@ -361,7 +717,7 @@ class QRCodeGenerator {
 
 // 页面加载完成后初始化
 document.addEventListener('DOMContentLoaded', () => {
-    new QRCodeGenerator();
+    new StudentQRCodeGenerator();
     
     // 添加一些视觉效果
     const animateOnScroll = () => {

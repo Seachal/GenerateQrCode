@@ -12,25 +12,93 @@
         <!-- 头部标题 -->
         <header class="header">
             <div class="header-content">
-                <h1><i class="fas fa-qrcode"></i> 二维码文件生成器</h1>
-                <p>支持图片、视频、音频等多种格式文件，生成二维码供手机扫描查看</p>
+                <h1><i class="fas fa-qrcode"></i> 学生介绍二维码生成器</h1>
+                <p>专为小学生设计的介绍展示系统，支持自我介绍、家庭介绍、职业介绍三类内容</p>
+                <div class="auth-section" id="authSection">
+                    <button class="login-btn" id="loginBtn">
+                        <i class="fas fa-sign-in-alt"></i> 管理员登录
+                    </button>
+                    <div class="user-info" id="userInfo" style="display: none;">
+                        <span id="username">管理员</span>
+                        <button class="logout-btn" id="logoutBtn">
+                            <i class="fas fa-sign-out-alt"></i> 退出
+                        </button>
+                    </div>
+                </div>
             </div>
         </header>
 
         <!-- 主要内容区域 -->
         <main class="main-content">
-            <!-- 文件上传区域 -->
-            <section class="upload-section">
-                <div class="upload-area" id="uploadArea">
-                    <div class="upload-content">
-                        <i class="fas fa-cloud-upload-alt upload-icon"></i>
-                        <h3>拖拽文件到此处或点击选择文件</h3>
-                        <p>支持图片、视频、音频等多种格式</p>
-                        <p class="file-limit">最大支持100MB文件</p>
-                        <input type="file" id="fileInput" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv" multiple>
-                        <button class="upload-btn" id="uploadBtn">
-                            <i class="fas fa-plus"></i> 选择文件
+            <!-- 登录表单 -->
+            <section class="login-section" id="loginSection" style="display: none;">
+                <div class="login-form">
+                    <h3><i class="fas fa-lock"></i> 管理员登录</h3>
+                    <form id="loginForm">
+                        <div class="form-group">
+                            <label for="usernameInput">用户名:</label>
+                            <input type="text" id="usernameInput" placeholder="请输入管理员用户名" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="passwordInput">密码:</label>
+                            <input type="password" id="passwordInput" placeholder="请输入管理员密码" required>
+                        </div>
+                        <button type="submit" class="submit-btn">
+                            <i class="fas fa-sign-in-alt"></i> 登录
                         </button>
+                        <button type="button" class="cancel-btn" id="cancelLoginBtn">
+                            <i class="fas fa-times"></i> 取消
+                        </button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- 学生管理区域 -->
+            <section class="student-management" id="studentManagement" style="display: none;">
+                <div class="management-header">
+                    <h3><i class="fas fa-users"></i> 学生管理</h3>
+                    <button class="refresh-btn" id="refreshStudentsBtn">
+                        <i class="fas fa-sync-alt"></i> 刷新
+                    </button>
+                </div>
+                <div class="students-grid" id="studentsGrid">
+                    <!-- 学生列表动态生成 -->
+                </div>
+            </section>
+
+            <!-- 文件上传区域 -->
+            <section class="upload-section" id="uploadSection" style="display: none;">
+                <div class="upload-form">
+                    <h3><i class="fas fa-upload"></i> 上传学生介绍文件</h3>
+                    
+                    <!-- 学生和分类选择 -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="studentSelect">选择学生:</label>
+                            <input type="text" id="studentNameInput" placeholder="输入学生姓名" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="categorySelect">选择分类:</label>
+                            <select id="categorySelect" required>
+                                <option value="">请选择分类</option>
+                                <option value="self">自我介绍</option>
+                                <option value="family">家庭介绍</option>
+                                <option value="career">职业介绍</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="upload-area" id="uploadArea">
+                        <div class="upload-content">
+                            <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                            <h4>拖拽文件到此处或点击选择文件</h4>
+                            <p>支持图片、视频、音频等多种格式</p>
+                            <p class="file-limit">最大支持100MB文件</p>
+                            <input type="file" id="fileInput" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv">
+                            <button class="upload-btn" id="uploadBtn">
+                                <i class="fas fa-plus"></i> 选择文件
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -41,22 +109,22 @@
                         <div class="format-item">
                             <i class="fas fa-image"></i>
                             <span>图片</span>
-                            <small>JPG, PNG, GIF, WebP, BMP, SVG</small>
+                            <small>自拍照片、手绘作品、获奖证书</small>
                         </div>
                         <div class="format-item">
                             <i class="fas fa-video"></i>
                             <span>视频</span>
-                            <small>MP4, AVI, MOV, WMV, FLV, WebM, MKV</small>
+                            <small>自我介绍视频、才艺展示</small>
                         </div>
                         <div class="format-item">
                             <i class="fas fa-music"></i>
                             <span>音频</span>
-                            <small>MP3, WAV, OGG, AAC, FLAC, M4A, WMA</small>
+                            <small>朗诵录音、唱歌录音</small>
                         </div>
                         <div class="format-item">
                             <i class="fas fa-file-alt"></i>
                             <span>文档</span>
-                            <small>PDF, DOC, DOCX, XLS, XLSX, TXT, CSV</small>
+                            <small>作文、手抄报、PPT</small>
                         </div>
                     </div>
                 </div>
@@ -76,10 +144,15 @@
             <section class="result-section" id="resultSection" style="display: none;">
                 <div class="result-content">
                     <div class="result-header">
-                        <h3><i class="fas fa-check-circle"></i> 二维码生成成功</h3>
-                        <button class="new-upload-btn" id="newUploadBtn">
-                            <i class="fas fa-plus"></i> 上传新文件
-                        </button>
+                        <h3><i class="fas fa-check-circle"></i> 学生介绍卡片生成成功</h3>
+                        <div class="header-buttons">
+                            <button class="new-upload-btn" id="newUploadBtn">
+                                <i class="fas fa-plus"></i> 上传新文件
+                            </button>
+                            <button class="back-to-management-btn" id="backToManagementBtn">
+                                <i class="fas fa-arrow-left"></i> 返回管理
+                            </button>
+                        </div>
                     </div>
                     
                     <div class="result-grid">
@@ -112,12 +185,12 @@
 
                         <!-- 二维码展示 -->
                         <div class="qrcode-card">
-                            <h4><i class="fas fa-qrcode"></i> 二维码</h4>
+                            <h4><i class="fas fa-qrcode"></i> 学生介绍卡片</h4>
                             <div class="qrcode-container">
-                                <img id="qrCodeImage" src="" alt="二维码" style="display: none;">
+                                <img id="qrCodeImage" src="" alt="学生介绍卡片" style="display: none;">
                                 <div class="qrcode-actions">
                                     <button class="action-btn download-btn" id="downloadQRBtn">
-                                        <i class="fas fa-download"></i> 保存二维码
+                                        <i class="fas fa-download"></i> 保存卡片
                                     </button>
                                     <button class="action-btn copy-btn" id="copyLinkBtn">
                                         <i class="fas fa-copy"></i> 复制链接
@@ -134,22 +207,22 @@
                             <div class="step">
                                 <div class="step-number">1</div>
                                 <div class="step-content">
-                                    <h5>保存二维码</h5>
-                                    <p>点击"保存二维码"按钮将二维码图片保存到本地</p>
+                                    <h5>保存介绍卡片</h5>
+                                    <p>点击"保存卡片"按钮将学生介绍卡片保存到本地</p>
                                 </div>
                             </div>
                             <div class="step">
                                 <div class="step-number">2</div>
                                 <div class="step-content">
-                                    <h5>手机扫码</h5>
-                                    <p>使用手机相机或扫码应用扫描二维码</p>
+                                    <h5>打印或展示</h5>
+                                    <p>将卡片打印出来贴在教室展示板或制作成名片</p>
                                 </div>
                             </div>
                             <div class="step">
                                 <div class="step-number">3</div>
                                 <div class="step-content">
-                                    <h5>查看文件</h5>
-                                    <p>扫码后即可在手机浏览器中查看您上传的文件</p>
+                                    <h5>扫码查看</h5>
+                                    <p>家长或同学扫描二维码即可查看学生的介绍内容</p>
                                 </div>
                             </div>
                         </div>
@@ -161,10 +234,10 @@
         <!-- 页脚 -->
         <footer class="footer">
             <div class="footer-content">
-                <p>&copy; 2025 二维码文件生成器. 支持无限次扫描，文件永久保存.</p>
+                <p>&copy; 2025 学生介绍二维码生成器. 专为小学教育设计，让每个孩子都能展示自己的精彩.</p>
                 <div class="footer-links">
-                    <a href="#"><i class="fas fa-shield-alt"></i> 隐私政策</a>
-                    <a href="#"><i class="fas fa-question-circle"></i> 帮助中心</a>
+                    <a href="#"><i class="fas fa-heart"></i> 关于我们</a>
+                    <a href="#"><i class="fas fa-question-circle"></i> 使用帮助</a>
                 </div>
             </div>
         </footer>
