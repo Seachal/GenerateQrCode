@@ -33,5 +33,16 @@
     "studentName": "李四",
     "category": "self",
     "relativePath": "students/李四/self/f9d1db01-bec1-412b-9834-98c69fd060ea.png"
+  },
+  "6fd0b00c-3144-4577-a04f-21744cf9932d": {
+    "id": "6fd0b00c-3144-4577-a04f-21744cf9932d",
+    "originalName": "example_fashion_design_cover.jpeg",
+    "filename": "6fd0b00c-3144-4577-a04f-21744cf9932d.jpeg",
+    "mimetype": "image/jpeg",
+    "size": 226091,
+    "uploadTime": "2025-09-20T14:47:41.183Z",
+    "studentName": "李四",
+    "category": "self",
+    "relativePath": "students/李四/self/6fd0b00c-3144-4577-a04f-21744cf9932d.jpeg"
   }
 }

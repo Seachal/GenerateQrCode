@@ -51,6 +51,12 @@ class StudentQRCodeGenerator {
         this.fileType = document.getElementById('fileType');
         this.uploadTime = document.getElementById('uploadTime');
         this.accessUrl = document.getElementById('accessUrl');
+        
+        // 模态框元素
+        this.studentFilesModal = document.getElementById('studentFilesModal');
+        this.modalStudentName = document.getElementById('modalStudentName');
+        this.closeModalBtn = document.getElementById('closeModalBtn');
+        this.fileCategoriesContainer = document.getElementById('fileCategoriesContainer');
     }
 
     // 绑定事件监听器
@@ -76,6 +82,14 @@ class StudentQRCodeGenerator {
         
         // 访问链接点击事件
         this.accessUrl.addEventListener('click', () => this.openAccessLink());
+        
+        // 模态框事件
+        this.closeModalBtn.addEventListener('click', () => this.closeStudentFilesModal());
+        this.studentFilesModal.addEventListener('click', (e) => {
+            if (e.target === this.studentFilesModal) {
+                this.closeStudentFilesModal();
+            }
+        });
     }
 
     // 设置拖拽上传功能
@@ -295,15 +309,26 @@ class StudentQRCodeGenerator {
                     <div class="categories">
                         ${categoriesHtml}
                     </div>
-                    <button class="upload-for-student-btn" data-student="${student.name}">
-                        <i class="fas fa-upload"></i> 上传文件
-                    </button>
+                    <div class="student-actions">
+                        <button class="upload-for-student-btn" data-student="${student.name}">
+                            <i class="fas fa-upload"></i> 上传文件
+                        </button>
+                        <button class="manage-student-btn" data-student="${student.name}">
+                            <i class="fas fa-cog"></i> 管理文件
+                        </button>
+                    </div>
                 </div>
             `;
             
             const uploadBtn = studentCard.querySelector('.upload-for-student-btn');
+            const manageBtn = studentCard.querySelector('.manage-student-btn');
+            
             uploadBtn.addEventListener('click', () => {
                 this.showUploadForm(student.name);
+            });
+            
+            manageBtn.addEventListener('click', () => {
+                this.showStudentFilesModal(student.name);
             });
             
             grid.appendChild(studentCard);
@@ -558,6 +583,200 @@ class StudentQRCodeGenerator {
             'career': '职业介绍'
         };
         return categoryNames[category] || category;
+    }
+
+    // 显示学生文件管理模态框
+    async showStudentFilesModal(studentName) {
+        try {
+            this.modalStudentName.textContent = `${studentName} - 文件管理`;
+            this.studentFilesModal.style.display = 'flex';
+            
+            // 加载学生文件数据
+            const response = await fetch(`/api/students/${encodeURIComponent(studentName)}/files`);
+            const result = await response.json();
+            
+            if (result.success) {
+                this.renderStudentFiles(result.files);
+            } else {
+                this.showNotification(result.error || '加载文件失败', 'error');
+            }
+        } catch (error) {
+            console.error('加载学生文件错误:', error);
+            this.showNotification('加载文件失败', 'error');
+        }
+    }
+
+    // 关闭学生文件管理模态框
+    closeStudentFilesModal() {
+        this.studentFilesModal.style.display = 'none';
+    }
+
+    // 渲染学生文件列表
+    renderStudentFiles(files) {
+        const container = this.fileCategoriesContainer;
+        container.innerHTML = '';
+        
+        const categoryLabels = {
+            'self': '自我介绍',
+            'family': '家庭介绍',
+            'career': '职业介绍'
+        };
+        
+        Object.entries(files).forEach(([category, fileList]) => {
+            const categoryDiv = document.createElement('div');
+            categoryDiv.className = 'file-category';
+            
+            const categoryLabel = categoryLabels[category] || category;
+            
+            categoryDiv.innerHTML = `
+                <div class="category-header">
+                    <h4><i class="fas fa-folder"></i> ${categoryLabel}</h4>
+                    <span class="file-count">${fileList.length} 个文件</span>
+                </div>
+                <div class="file-list" id="fileList-${category}">
+                    ${fileList.length === 0 ? '<p class="no-files">暂无文件</p>' : ''}
+                </div>
+            `;
+            
+            const fileListContainer = categoryDiv.querySelector(`#fileList-${category}`);
+            
+            fileList.forEach(file => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                
+                const uploadDate = new Date(file.uploadTime).toLocaleString('zh-CN');
+                const fileSize = this.formatFileSize(file.size);
+                
+                fileItem.innerHTML = `
+                    <div class="file-info">
+                        <div class="file-icon">
+                            ${this.getFileIcon(file.mimetype)}
+                        </div>
+                        <div class="file-details">
+                            <h5>${file.originalName}</h5>
+                            <p>大小: ${fileSize} | 上传时间: ${uploadDate}</p>
+                        </div>
+                    </div>
+                    <div class="file-actions">
+                        <button class="action-btn view-btn" onclick="window.open('/file/${file.id}', '_blank')">
+                            <i class="fas fa-eye"></i> 查看
+                        </button>
+                        <button class="action-btn qr-btn" data-file-id="${file.id}">
+                            <i class="fas fa-qrcode"></i> 二维码
+                        </button>
+                        <button class="action-btn delete-btn" data-file-id="${file.id}">
+                            <i class="fas fa-trash"></i> 删除
+                        </button>
+                    </div>
+                `;
+                
+                // 绑定事件
+                const qrBtn = fileItem.querySelector('.qr-btn');
+                const deleteBtn = fileItem.querySelector('.delete-btn');
+                
+                qrBtn.addEventListener('click', () => this.showFileQRCode(file));
+                deleteBtn.addEventListener('click', () => this.deleteFile(file.id, fileItem));
+                
+                fileListContainer.appendChild(fileItem);
+            });
+            
+            container.appendChild(categoryDiv);
+        });
+    }
+
+    // 获取文件图标
+    getFileIcon(mimetype) {
+        if (mimetype.startsWith('image/')) return '<i class="fas fa-image"></i>';
+        if (mimetype.startsWith('video/')) return '<i class="fas fa-video"></i>';
+        if (mimetype.startsWith('audio/')) return '<i class="fas fa-music"></i>';
+        if (mimetype.includes('pdf')) return '<i class="fas fa-file-pdf"></i>';
+        if (mimetype.includes('word')) return '<i class="fas fa-file-word"></i>';
+        if (mimetype.includes('excel') || mimetype.includes('sheet')) return '<i class="fas fa-file-excel"></i>';
+        return '<i class="fas fa-file"></i>';
+    }
+
+    // 显示文件二维码
+    async showFileQRCode(file) {
+        try {
+            // 关闭模态框并显示结果
+            this.closeStudentFilesModal();
+            
+            const fileUrl = `${window.location.origin}/file/${file.id}`;
+            
+            // 使用已保存的二维码数据，如果没有则重新生成
+            let qrCardData;
+            if (file.cardData) {
+                qrCardData = file.cardData;
+            } else {
+                // 如果没有保存的二维码数据，重新生成
+                qrCardData = {
+                    qrCode: file.qrCodeData || await this.generateBasicQRCode(fileUrl),
+                    title: `${file.studentName}的${file.categoryName}`
+                };
+            }
+            
+            // 构建结果数据结构
+            const result = {
+                fileInfo: file,
+                qrCardData: qrCardData,
+                accessUrl: fileUrl
+            };
+            
+            this.showResult(result);
+            
+        } catch (error) {
+            console.error('显示二维码错误:', error);
+            this.showNotification('显示二维码失败', 'error');
+        }
+    }
+
+    // 生成基础二维码
+    async generateBasicQRCode(url) {
+        return new Promise((resolve, reject) => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // 使用简单的方法创建二维码占位符
+            // 实际项目中这里应该调用QR码生成库
+            canvas.width = 256;
+            canvas.height = 256;
+            ctx.fillStyle = '#f0f0f0';
+            ctx.fillRect(0, 0, 256, 256);
+            ctx.fillStyle = '#333';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('二维码', 128, 128);
+            
+            resolve(canvas.toDataURL());
+        });
+    }
+
+    // 删除文件
+    async deleteFile(fileId, fileItem) {
+        if (!confirm('确定要删除这个文件吗？删除后无法恢复。')) {
+            return;
+        }
+        
+        try {
+            const response = await fetch(`/api/files/${fileId}`, {
+                method: 'DELETE'
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                fileItem.remove();
+                this.showNotification('文件删除成功', 'success');
+                
+                // 刷新学生管理列表
+                this.loadStudents();
+            } else {
+                this.showNotification(result.error || '删除失败', 'error');
+            }
+        } catch (error) {
+            console.error('删除文件错误:', error);
+            this.showNotification('删除文件失败', 'error');
+        }
     }
 
     // 下载二维码

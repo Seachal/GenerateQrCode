@@ -94,6 +94,7 @@ mkdir -p $TEMP_DIR
 cp server.js $TEMP_DIR/
 cp package.json $TEMP_DIR/
 cp -r public $TEMP_DIR/
+cp project-log.md $TEMP_DIR/ 2>/dev/null || true
 
 # 清理服务器目录并上传
 ssh -p $SERVER_PORT $SERVER_USER@$SERVER_IP "rm -rf $DEPLOY_PATH/*"
@@ -139,7 +140,23 @@ EOF
 "
 print_success "PM2配置完成"
 
-# 6. 启动服务
+# 6. 部署后清理和初始化
+print_info "清理临时文件和初始化..."
+ssh -p $SERVER_PORT $SERVER_USER@$SERVER_IP "
+    cd '$DEPLOY_PATH'
+    
+    # 创建必要的目录
+    mkdir -p uploads/temp
+    mkdir -p uploads/students
+    
+    # 清理可能的临时文件
+    find uploads/temp -type f -mtime +1 -delete 2>/dev/null || true
+    
+    # 设置正确的权限
+    chmod -R 755 uploads/
+"
+
+# 7. 启动服务
 print_info "启动服务..."
 ssh -p $SERVER_PORT $SERVER_USER@$SERVER_IP "
     cd '$DEPLOY_PATH'
@@ -155,7 +172,7 @@ ssh -p $SERVER_PORT $SERVER_USER@$SERVER_IP "
 "
 print_success "服务启动完成"
 
-# 7. 验证部署
+# 8. 验证部署
 print_info "验证部署..."
 sleep 5
 
