@@ -1109,3 +1109,135 @@ body {
         padding: 25px 20px;
     }
 }
+
+/* 快速查看模态框样式 */
+.quick-view-content {
+    max-width: 1200px;
+    width: 95%;
+}
+
+.quick-view-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    padding: 20px;
+}
+
+.file-list-section,
+.qr-section {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 20px;
+}
+
+.file-list-section h4,
+.qr-section h4 {
+    margin: 0 0 15px 0;
+    color: #333;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.quick-view-files {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.quick-view-file-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background: white;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    border: 1px solid #e9ecef;
+    transition: all 0.2s ease;
+}
+
+.quick-view-file-item:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+}
+
+.quick-view-file-item .file-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+}
+
+.quick-view-file-item .file-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.quick-view-file-item .file-name {
+    font-weight: 500;
+    color: #333;
+    font-size: 0.9rem;
+}
+
+.quick-view-file-item .file-size {
+    color: #6c757d;
+    font-size: 0.8rem;
+}
+
+.qr-preview {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 300px;
+    background: white;
+    border-radius: 8px;
+    border: 2px dashed #e9ecef;
+}
+
+.qr-preview canvas {
+    border-radius: 8px;
+}
+
+/* 分类项目样式 */
+.category-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.quick-view-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 4px 8px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    height: 28px;
+}
+
+.quick-view-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+/* 响应式设计 - 快速查看模态框 */
+@media (max-width: 768px) {
+    .quick-view-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+        padding: 15px;
+    }
+    
+    .quick-view-content {
+        width: 98%;
+        max-width: none;
+    }
+}

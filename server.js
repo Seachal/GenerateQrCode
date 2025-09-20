@@ -18,6 +18,9 @@ fs.ensureDirSync(uploadsDir);
 const dbPath = path.join(__dirname, 'database.sqlite');
 const db = new sqlite3.Database(dbPath);
 
+// 设置数据库编码为UTF-8
+db.exec("PRAGMA encoding = 'UTF-8'");
+
 // 创建数据表
 db.serialize(() => {
   // 文件信息表
@@ -49,28 +52,29 @@ db.serialize(() => {
   `);
 });
 
-// 生成智能文件名
-function generateSmartFilename(studentName, category, originalName, existingFiles = []) {
-  const categoryNames = {
-    'self': '自我介绍',
-    'family': '家庭介绍',
-    'career': '职业介绍'
-  };
-  
-  const categoryName = categoryNames[category] || category;
+// 生成智能文件名和显示名
+// 简化文件命名函数 - 保持原文件名
+function generateSimpleFilename(originalName, existingFiles = []) {
   const extension = path.extname(originalName);
-  const baseName = `${studentName}_${categoryName}`;
+  const baseName = path.parse(originalName).name;
   
-  // 检查是否存在同名文件
-  let finalName = baseName;
+  // 检查是否存在同名文件，如果存在则添加序号
+  let finalName = originalName;
   let counter = 1;
   
-  while (existingFiles.some(file => file.startsWith(finalName + extension))) {
-    finalName = `${baseName}_${counter}`;
+  while (existingFiles.includes(finalName)) {
+    finalName = `${baseName}_${counter}${extension}`;
     counter++;
   }
   
-  return finalName + extension;
+  // 生成实际存储的文件名（使用UUID确保文件系统兼容性）
+  const actualFilename = `${uuidv4()}${extension}`;
+  
+  return {
+    actualFilename: actualFilename,     // 实际存储的文件名（UUID）
+    displayName: finalName,             // 用户看到的文件名（原文件名或带序号）
+    originalName: originalName          // 原始文件名
+  };
 }
 
 // 管理员账户配置
@@ -429,26 +433,26 @@ app.post('/api/upload', requireAuth, upload.single('file'), async (req, res) => 
     // 获取现有文件列表以避免重名
     const existingFiles = await fs.readdir(targetDir).catch(() => []);
     
-    // 生成智能文件名
-    const smartFilename = generateSmartFilename(studentName, category, req.file.originalname, existingFiles);
+    // 生成简化文件名（保持原文件名）
+    const filenamingResult = generateSimpleFilename(req.file.originalname, existingFiles);
     
-    // 移动文件从临时目录到目标目录，使用新文件名
+    // 移动文件从临时目录到目标目录，使用实际文件名
     const tempFilePath = req.file.path;
-    const targetFilePath = path.join(targetDir, smartFilename);
+    const targetFilePath = path.join(targetDir, filenamingResult.actualFilename);
     await fs.move(tempFilePath, targetFilePath);
 
     const fileId = uuidv4();
     const fileInfo = {
       id: fileId,
-      originalName: req.file.originalname,
-      displayName: smartFilename,
-      filename: smartFilename,
+      originalName: filenamingResult.originalName,
+      displayName: filenamingResult.displayName,
+      filename: filenamingResult.actualFilename,
       mimetype: req.file.mimetype,
       size: req.file.size,
       uploadTime: new Date().toISOString(),
       studentName: studentName,
       category: category,
-      relativePath: path.join('students', studentName, category, smartFilename)
+      relativePath: path.join('students', studentName, category, filenamingResult.actualFilename)
     };
 
     // 生成文件访问URL
@@ -536,7 +540,9 @@ app.get('/file/:id', async (req, res) => {
           
           if (await fs.pathExists(filePath)) {
             res.setHeader('Content-Type', oldFileInfo.mimetype);
-            res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(oldFileInfo.originalName)}"`);
+            // 正确处理中文文件名编码
+            const encodedFilename = encodeURIComponent(oldFileInfo.originalName);
+            res.setHeader('Content-Disposition', `inline; filename*=UTF-8''${encodedFilename}`);
             return res.sendFile(filePath);
           }
         }
@@ -553,7 +559,11 @@ app.get('/file/:id', async (req, res) => {
     
     // 根据文件类型设置响应头
     res.setHeader('Content-Type', fileInfo.mimetype);
-    res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(fileInfo.display_name)}"`);
+    
+    // 正确处理中文文件名编码
+    const filename = fileInfo.display_name || fileInfo.original_name;
+    const encodedFilename = encodeURIComponent(filename);
+    res.setHeader('Content-Disposition', `inline; filename*=UTF-8''${encodedFilename}`);
     
     // 发送文件
     res.sendFile(filePath);

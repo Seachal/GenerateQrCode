@@ -260,6 +260,34 @@
         </div>
     </div>
 
+    <!-- 快速查看模态框 -->
+    <div class="modal" id="quickViewModal" style="display: none;">
+        <div class="modal-content quick-view-content">
+            <div class="modal-header">
+                <h3 id="quickViewTitle">快速查看</h3>
+                <button class="modal-close" id="closeQuickViewBtn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="quick-view-grid">
+                    <div class="file-list-section">
+                        <h4>文件列表</h4>
+                        <div class="quick-view-files" id="quickViewFiles">
+                            <!-- 文件列表动态生成 -->
+                        </div>
+                    </div>
+                    <div class="qr-section">
+                        <h4>二维码预览</h4>
+                        <div class="qr-preview" id="qrPreview">
+                            <!-- 二维码动态生成 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- 通知消息 -->
     <div class="notification" id="notification">
         <div class="notification-content">

@@ -57,6 +57,13 @@ class StudentQRCodeGenerator {
         this.modalStudentName = document.getElementById('modalStudentName');
         this.closeModalBtn = document.getElementById('closeModalBtn');
         this.fileCategoriesContainer = document.getElementById('fileCategoriesContainer');
+        
+        // 快速查看模态框元素
+        this.quickViewModal = document.getElementById('quickViewModal');
+        this.quickViewTitle = document.getElementById('quickViewTitle');
+        this.closeQuickViewBtn = document.getElementById('closeQuickViewBtn');
+        this.quickViewFiles = document.getElementById('quickViewFiles');
+        this.qrPreview = document.getElementById('qrPreview');
     }
 
     // 绑定事件监听器
@@ -88,6 +95,14 @@ class StudentQRCodeGenerator {
         this.studentFilesModal.addEventListener('click', (e) => {
             if (e.target === this.studentFilesModal) {
                 this.closeStudentFilesModal();
+            }
+        });
+        
+        // 快速查看模态框事件
+        this.closeQuickViewBtn.addEventListener('click', () => this.closeQuickViewModal());
+        this.quickViewModal.addEventListener('click', (e) => {
+            if (e.target === this.quickViewModal) {
+                this.closeQuickViewModal();
             }
         });
     }
@@ -300,7 +315,16 @@ class StudentQRCodeGenerator {
             const categoriesHtml = Object.entries(student.categories).map(([category, count]) => {
                 const label = categoryLabels[category] || category;
                 const badgeClass = count > 0 ? 'has-files' : 'no-files';
-                return `<span class="category-badge ${badgeClass}">${label} (${count})</span>`;
+                const quickViewBtn = count > 0 ? 
+                    `<button class="quick-view-btn" data-student="${student.name}" data-category="${category}" title="快速查看">
+                        <i class="fas fa-eye"></i>
+                    </button>` : '';
+                return `
+                    <div class="category-item">
+                        <span class="category-badge ${badgeClass}">${label} (${count})</span>
+                        ${quickViewBtn}
+                    </div>
+                `;
             }).join('');
             
             studentCard.innerHTML = `
@@ -322,6 +346,7 @@ class StudentQRCodeGenerator {
             
             const uploadBtn = studentCard.querySelector('.upload-for-student-btn');
             const manageBtn = studentCard.querySelector('.manage-student-btn');
+            const quickViewBtns = studentCard.querySelectorAll('.quick-view-btn');
             
             uploadBtn.addEventListener('click', () => {
                 this.showUploadForm(student.name);
@@ -329,6 +354,16 @@ class StudentQRCodeGenerator {
             
             manageBtn.addEventListener('click', () => {
                 this.showStudentFilesModal(student.name);
+            });
+            
+            // 为快速查看按钮添加事件监听器
+            quickViewBtns.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const studentName = btn.dataset.student;
+                    const category = btn.dataset.category;
+                    this.showQuickViewModal(studentName, category);
+                });
             });
             
             grid.appendChild(studentCard);
@@ -609,6 +644,106 @@ class StudentQRCodeGenerator {
     // 关闭学生文件管理模态框
     closeStudentFilesModal() {
         this.studentFilesModal.style.display = 'none';
+    }
+
+    // 显示快速查看模态框
+    async showQuickViewModal(studentName, category) {
+        try {
+            const categoryLabels = {
+                'self': '自我介绍',
+                'family': '家庭介绍',
+                'career': '职业介绍'
+            };
+            
+            const categoryLabel = categoryLabels[category] || category;
+            this.quickViewTitle.textContent = `${studentName} - ${categoryLabel}`;
+            this.quickViewModal.style.display = 'flex';
+            
+            // 加载学生文件数据
+            const response = await fetch(`/api/students/${encodeURIComponent(studentName)}/files`);
+            const result = await response.json();
+            
+            if (result.success) {
+                // 过滤指定分类的文件
+                const categoryFiles = result.files.filter(file => file.category === category);
+                this.renderQuickViewFiles(categoryFiles, categoryLabel);
+            } else {
+                this.showNotification(result.error || '加载文件失败', 'error');
+            }
+        } catch (error) {
+            console.error('加载文件错误:', error);
+            this.showNotification('加载文件失败', 'error');
+        }
+    }
+
+    // 关闭快速查看模态框
+    closeQuickViewModal() {
+        this.quickViewModal.style.display = 'none';
+        this.qrPreview.innerHTML = '';
+    }
+
+    // 渲染快速查看文件列表
+    renderQuickViewFiles(files, categoryLabel) {
+        this.quickViewFiles.innerHTML = '';
+        
+        if (files.length === 0) {
+            this.quickViewFiles.innerHTML = '<div class="no-files">该分类下暂无文件</div>';
+            return;
+        }
+        
+        files.forEach((file, index) => {
+            const fileItem = document.createElement('div');
+            fileItem.className = 'quick-view-file-item';
+            
+            const fileIcon = this.getFileIcon(file.mimetype);
+            fileItem.innerHTML = `
+                <div class="file-info">
+                    <i class="${fileIcon}"></i>
+                    <div class="file-details">
+                        <span class="file-name">${file.display_name}</span>
+                        <span class="file-size">${this.formatFileSize(file.size)}</span>
+                    </div>
+                </div>
+                <div class="file-actions">
+                    <button class="action-btn view-btn" onclick="window.open('/file/${file.id}', '_blank')" title="查看文件">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button class="action-btn qr-btn" data-file-id="${file.id}" title="查看二维码">
+                        <i class="fas fa-qrcode"></i>
+                    </button>
+                </div>
+            `;
+            
+            // 为二维码按钮添加事件监听器
+            const qrBtn = fileItem.querySelector('.qr-btn');
+            qrBtn.addEventListener('click', () => {
+                this.showQuickViewQRCode(file);
+            });
+            
+            this.quickViewFiles.appendChild(fileItem);
+        });
+        
+        // 默认显示第一个文件的二维码
+        if (files.length > 0) {
+            this.showQuickViewQRCode(files[0]);
+        }
+    }
+
+    // 显示快速查看二维码
+    showQuickViewQRCode(file) {
+        if (file.qrCodeData && file.cardData) {
+            try {
+                const cardData = JSON.parse(file.cardData);
+                this.generateQRCard(cardData.qrCode, cardData, this.qrPreview);
+            } catch (error) {
+                console.error('解析二维码数据错误:', error);
+                // 降级到基本二维码
+                this.generateBasicQRCode(`${window.location.origin}/file/${file.id}`, this.qrPreview);
+            }
+        } else {
+            // 生成基本二维码
+            this.generateBasicQRCode(`${window.location.origin}/file/${file.id}`, this.qrPreview);
+        }
     }
 
     // 渲染学生文件列表
