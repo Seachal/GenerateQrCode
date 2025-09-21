@@ -514,7 +514,7 @@ class StudentQRCodeGenerator {
         const fileInfo = result.fileInfo;
         
         // 填充文件信息
-        this.fileName.textContent = fileInfo.originalName;
+        this.fileName.textContent = fileInfo.displayName || fileInfo.originalName;
         this.fileSize.textContent = this.formatFileSize(fileInfo.size);
         this.fileType.textContent = this.getFileTypeDescription(fileInfo.mimetype);
         this.uploadTime.textContent = this.formatDate(fileInfo.uploadTime);
@@ -665,7 +665,7 @@ class StudentQRCodeGenerator {
             
             if (result.success) {
                 // 过滤指定分类的文件
-                const categoryFiles = result.files.filter(file => file.category === category);
+                const categoryFiles = result.files[category] || [];
                 this.renderQuickViewFiles(categoryFiles, categoryLabel);
             } else {
                 this.showNotification(result.error || '加载文件失败', 'error');
@@ -700,12 +700,12 @@ class StudentQRCodeGenerator {
                 <div class="file-info">
                     <i class="${fileIcon}"></i>
                     <div class="file-details">
-                        <span class="file-name">${file.display_name}</span>
+                        <span class="file-name">${file.displayName || file.display_name}</span>
                         <span class="file-size">${this.formatFileSize(file.size)}</span>
                     </div>
                 </div>
                 <div class="file-actions">
-                    <button class="action-btn view-btn" onclick="window.open('/file/${file.id}', '_blank')" title="查看文件">
+                    <button class="action-btn view-btn" data-file-id="${file.id}" title="查看文件">
                         <i class="fas fa-eye"></i>
                     </button>
                     <button class="action-btn qr-btn" data-file-id="${file.id}" title="查看二维码">
@@ -714,8 +714,14 @@ class StudentQRCodeGenerator {
                 </div>
             `;
             
-            // 为二维码按钮添加事件监听器
+            // 为查看和二维码按钮添加事件监听器
+            const viewBtn = fileItem.querySelector('.view-btn');
             const qrBtn = fileItem.querySelector('.qr-btn');
+            
+            viewBtn.addEventListener('click', () => {
+                window.open(`/file/${file.id}`, '_blank');
+            });
+            
             qrBtn.addEventListener('click', () => {
                 this.showQuickViewQRCode(file);
             });
@@ -788,12 +794,12 @@ class StudentQRCodeGenerator {
                             ${this.getFileIcon(file.mimetype)}
                         </div>
                         <div class="file-details">
-                            <h5>${file.originalName}</h5>
+                            <h5>${file.displayName || file.originalName}</h5>
                             <p>大小: ${fileSize} | 上传时间: ${uploadDate}</p>
                         </div>
                     </div>
                     <div class="file-actions">
-                        <button class="action-btn view-btn" onclick="window.open('/file/${file.id}', '_blank')">
+                        <button class="action-btn view-btn" data-file-id="${file.id}">
                             <i class="fas fa-eye"></i> 查看
                         </button>
                         <button class="action-btn qr-btn" data-file-id="${file.id}">
@@ -806,9 +812,13 @@ class StudentQRCodeGenerator {
                 `;
                 
                 // 绑定事件
+                const viewBtn = fileItem.querySelector('.view-btn');
                 const qrBtn = fileItem.querySelector('.qr-btn');
                 const deleteBtn = fileItem.querySelector('.delete-btn');
                 
+                viewBtn.addEventListener('click', () => {
+                    window.open(`/file/${file.id}`, '_blank');
+                });
                 qrBtn.addEventListener('click', () => this.showFileQRCode(file));
                 deleteBtn.addEventListener('click', () => this.deleteFile(file.id, fileItem));
                 

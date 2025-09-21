@@ -267,6 +267,153 @@ process.on('unhandledRejection', (reason, promise) => {
 3. 查看官方文档
 4. 搜索相关资料
 
-**最后更新时间：** 2025-09-13 08:30  
-**更新人员：** Seachal  
-**版本：** v1.0.0
+## 📅 2025-09-20 - 界面功能修复
+
+### ✅ 已解决的问题
+
+#### 1. "查看"按钮点击失败
+**错误描述：**
+```
+点击文件列表中的"查看"按钮没有反应，无法打开文件
+```
+
+**错误原因：**
+- 使用了`onclick`属性内联事件处理
+- 在某些浏览器环境下内联事件可能被阻止
+- 与"二维码"按钮的事件处理方式不一致
+
+**解决方案：**
+```javascript
+// 修改前：使用 onclick 属性
+<button class="action-btn view-btn" onclick="window.open('/file/${file.id}', '_blank')">
+
+// 修改后：使用 addEventListener
+<button class="action-btn view-btn" data-file-id="${file.id}">
+const viewBtn = fileItem.querySelector('.view-btn');
+viewBtn.addEventListener('click', () => {
+    window.open(`/file/${file.id}`, '_blank');
+});
+```
+
+**修复时间：** 2025-09-20 晚间  
+**修复文件：** `public/script.js`
+
+---
+
+#### 2. 中文文件名显示乱码
+**错误描述：**
+```
+界面中显示的中文文件名出现乱码或显示异常
+```
+
+**错误原因：**
+- 前端代码中文件名字段使用不一致
+- 有些地方使用`originalName`，有些使用`display_name`
+- 数据结构映射不统一
+
+**解决方案：**
+```javascript
+// 修改前：不一致的字段使用
+this.fileName.textContent = fileInfo.originalName;
+<span class="file-name">${file.display_name}</span>
+
+// 修改后：统一使用降级方案
+this.fileName.textContent = fileInfo.displayName || fileInfo.originalName;
+<span class="file-name">${file.displayName || file.display_name}</span>
+```
+
+**修复时间：** 2025-09-20 晚间  
+**修复文件：** `public/script.js`
+
+---
+
+#### 3. 快速查看数据过滤错误
+**错误描述：**
+```
+快速查看模态框中文件列表为空或显示错误
+```
+
+**错误原因：**
+- 数据结构访问方式错误
+- 使用了`filter`方法但数据结构是对象而不是数组
+
+**解决方案：**
+```javascript
+// 修改前：错误的数据过滤
+const categoryFiles = result.files.filter(file => file.category === category);
+
+// 修改后：正确的数据访问
+const categoryFiles = result.files[category] || [];
+```
+
+**修复时间：** 2025-09-20 晚间  
+**修复文件：** `public/script.js`
+
+---
+
+### 🔧 技术改进记录
+
+#### 1. 事件处理标准化
+- 统一使用`addEventListener`处理所有按钮点击事件
+- 避免使用内联`onclick`属性
+- 提供更好的错误处理和调试能力
+
+#### 2. 数据字段命名统一
+- 建立了字段优先级：`displayName` > `originalName`
+- 使用逻辑或操作符提供降级方案
+- 确保在不同数据结构下都能正确显示
+
+#### 3. 模态框数据处理优化
+- 明确了数据结构的访问方式
+- 添加了空数组的默认值处理
+- 提高了代码的健壮性
+
+---
+
+## 📅 2025-09-21 - JavaScript文件解析错误修复
+
+### ✅ 已解决的问题
+
+#### 1. "管理员登录"按钮无响应
+**错误描述：**
+```
+点击"管理员登录"按钮没有任何反应，页面无法进入登录状态
+```
+
+**错误原因：**
+- JavaScript文件第一行存在语法错误：`npm//` 而不是正确的注释 `//`
+- 这导致整个JavaScript文件无法被浏览器正确解析和执行
+- 所有的事件监听器都无法正常工作
+
+**解决方案：**
+```javascript
+// 修改前：错误的语法
+npm// 学生介绍二维码生成器前端脚本
+
+// 修改后：正确的注释语法
+// 学生介绍二维码生成器前端脚本
+```
+
+**修复时间：** 2025-09-21 22:35  
+**修复文件：** `public/script.js`  
+**状态：** ✅ 已修复，所有功能恢复正常
+
+---
+
+### 🔧 预防措施
+
+#### 1. 代码编辑规范
+- 在编辑JavaScript文件时需要特别注意语法正确性
+- 使用代码编辑器的语法高亮功能检查错误
+- 定期运行代码检查工具验证语法
+
+#### 2. 测试流程
+- 每次修改JavaScript文件后应立即测试功能
+- 使用浏览器开发者工具检查是否有JavaScript错误
+- 建立自动化测试流程
+
+---
+
+**最后更新时间：** 2025-09-21 22:35  
+**更新人员：** 资深全栈工程师  
+**版本：** v1.1.1
