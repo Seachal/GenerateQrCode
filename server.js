@@ -77,6 +77,21 @@ function generateSimpleFilename(originalName, existingFiles = []) {
   };
 }
 
+// 修复可能的中文文件名乱码（latin1 -> utf8）
+function maybeDecodeLatin1ToUtf8(name) {
+  if (!name) return name;
+  // 常见乱码字符检测（Ã, Â 等），若出现则尝试转码
+  const mojibakePattern = /[ÃÂæÆ¢£¤¥«»®©€]/;
+  if (mojibakePattern.test(name)) {
+    try {
+      return Buffer.from(name, 'latin1').toString('utf8');
+    } catch (e) {
+      return name;
+    }
+  }
+  return name;
+}
+
 // 管理员账户配置
 const ADMIN_CREDENTIALS = {
   username: 'admin',
@@ -133,7 +148,11 @@ const allowedMimeTypes = [
   // 视频格式
   'video/mp4', 'video/avi', 'video/mov', 'video/wmv', 'video/flv', 'video/webm', 'video/mkv',
   // 音频格式
-  'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/aac', 'audio/flac', 'audio/m4a', 'audio/wma',
+  // 常见：mp3/wav/m4a/aac/ogg/opus/flac/wma/webm/aiff 等
+  'audio/mp3', 'audio/mpeg', 'audio/wav', 'audio/x-wav', 'audio/ogg', 'audio/opus',
+  'audio/aac', 'audio/flac', 'audio/x-flac', 'audio/m4a', 'audio/x-m4a', 'audio/mp4',
+  'audio/wma', 'audio/x-ms-wma', 'audio/webm', 'audio/aiff', 'audio/x-aiff',
+  'audio/3gpp', 'audio/3gpp2', 'audio/amr',
   // 文档格式
   'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -272,8 +291,8 @@ app.get('/api/students/:studentName/files', requireAuth, async (req, res) => {
       
       studentFiles[file.category].push({
         id: file.id,
-        originalName: file.original_name,
-        displayName: file.display_name,
+        originalName: maybeDecodeLatin1ToUtf8(file.original_name),
+        displayName: maybeDecodeLatin1ToUtf8(file.display_name),
         filename: file.filename,
         mimetype: file.mimetype,
         size: file.size,
@@ -433,8 +452,9 @@ app.post('/api/upload', requireAuth, upload.single('file'), async (req, res) => 
     // 获取现有文件列表以避免重名
     const existingFiles = await fs.readdir(targetDir).catch(() => []);
     
-    // 生成简化文件名（保持原文件名）
-    const filenamingResult = generateSimpleFilename(req.file.originalname, existingFiles);
+    // 生成简化文件名（保持原文件名语义，修复可能的中文乱码）
+    const originalNameNormalized = maybeDecodeLatin1ToUtf8(req.file.originalname).trim();
+    const filenamingResult = generateSimpleFilename(originalNameNormalized, existingFiles);
     
     // 移动文件从临时目录到目标目录，使用实际文件名
     const tempFilePath = req.file.path;
@@ -561,7 +581,7 @@ app.get('/file/:id', async (req, res) => {
     res.setHeader('Content-Type', fileInfo.mimetype);
     
     // 正确处理中文文件名编码
-    const filename = fileInfo.display_name || fileInfo.original_name;
+    const filename = maybeDecodeLatin1ToUtf8(fileInfo.display_name || fileInfo.original_name);
     const encodedFilename = encodeURIComponent(filename);
     res.setHeader('Content-Disposition', `inline; filename*=UTF-8''${encodedFilename}`);
     

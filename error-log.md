@@ -417,3 +417,33 @@ npm// 学生介绍二维码生成器前端脚本
 **最后更新时间：** 2025-09-21 22:35  
 **更新人员：** 资深全栈工程师  
 **版本：** v1.1.1
+
+## 📅 2025-09-21 - 前端查看按钮与音频/中文文件名修复
+
+### ✅ 已解决的问题
+
+#### 1. “查看”按钮行为与“二维码”不一致
+**现象：** 点击“查看”仅打开文件，新需求期望与“二维码”按钮一致展示结果页。
+
+**修复：** 在 `public/script.js` 中将“查看”按钮事件改为调用 `showFileQRCode(file)`，与“二维码”保持一致体验。
+
+#### 2. 音频格式提示“不支持的文件格式”
+**原因：** 前后端允许的音频 MIME 类型过少，未覆盖部分常见类型（如 `audio/mpeg`, `audio/x-m4a`, `audio/opus` 等）。
+
+**修复：**
+- 后端 `server.js` 扩展 `allowedMimeTypes` 音频白名单，覆盖 mp3/mpeg/wav/x-wav/aac/m4a/x-m4a/mp4/ogg/opus/flac/x-flac/wma/x-ms-wma/webm/aiff/x-aiff/3gpp/3gpp2/amr 等。
+- 前端 `public/script.js` 的 `allowedTypes` 同步上述列表，保持一致性。
+
+#### 3. 中文文件名显示乱码
+**原因：** 部分环境下上传时 `originalname` 可能以 latin1 读入，导致入库与展示乱码。
+
+**修复：**
+- 在 `server.js` 中新增 `maybeDecodeLatin1ToUtf8()`，检测典型乱码字符，必要时执行 latin1->utf8 转码。
+- 上传时对 `req.file.originalname` 进行规范化，入库 `original_name`、`display_name` 均为UTF-8。
+- 返回学生文件列表与下载响应头中统一应用该转码，确保页面显示与下载文件名正确。
+
+**影响文件：**
+- `server.js`
+- `public/script.js`
+
+**状态：** ✅ 已修复

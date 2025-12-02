@@ -479,7 +479,11 @@ class StudentQRCodeGenerator {
             // 视频
             'video/mp4', 'video/avi', 'video/mov', 'video/wmv', 'video/flv', 'video/webm', 'video/mkv',
             // 音频
-            'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/aac', 'audio/flac', 'audio/m4a', 'audio/wma',
+            // 与后端保持一致的更全白名单
+            'audio/mp3', 'audio/mpeg', 'audio/wav', 'audio/x-wav', 'audio/ogg', 'audio/opus',
+            'audio/aac', 'audio/flac', 'audio/x-flac', 'audio/m4a', 'audio/x-m4a', 'audio/mp4',
+            'audio/wma', 'audio/x-ms-wma', 'audio/webm', 'audio/aiff', 'audio/x-aiff',
+            'audio/3gpp', 'audio/3gpp2', 'audio/amr',
             // 文档
             'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -718,8 +722,9 @@ class StudentQRCodeGenerator {
             const viewBtn = fileItem.querySelector('.view-btn');
             const qrBtn = fileItem.querySelector('.qr-btn');
             
+            // 将“查看”按钮与“二维码”体验统一：直接展示二维码结果页
             viewBtn.addEventListener('click', () => {
-                window.open(`/file/${file.id}`, '_blank');
+                this.showFileQRCode(file);
             });
             
             qrBtn.addEventListener('click', () => {
